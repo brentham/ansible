@@ -1,0 +1,14 @@
+version: '3.7'
+services:
+    rancher:
+        container_name: rancher
+        image: rancher/rancher:latest
+        privileged: true
+        volumes:
+            - '/opt/rancher:/var/lib/rancher'
+        ports:
+            - 8000:80
+            - 9443:443
+        restart: unless-stopped
+
+

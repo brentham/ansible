@@ -1,0 +1,26 @@
+- hosts: servers
+  become: yes
+  tasks:
+  - name: Upgrade all apt packages
+    apt: upgrade=dist force_apt_get=yes
+
+  - name: Install a list of packages
+    apt:
+      name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+      - docker.io
+      - docker-compose
+      state: present
+      update_cache: true
+    become: true
+
+  - name: docker sudo
+    become: yes
+    command: usermod -aG docker "{{ ansible_user }}"
+
+  - name: reset ssh connection to allow user changes to affect 'current login user'
+    meta: reset_connection

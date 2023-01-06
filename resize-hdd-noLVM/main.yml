@@ -1,0 +1,26 @@
+---
+
+- hosts: servers
+  vars:
+      - diskNumber: '2'
+  become: True
+  tasks:
+    - name: partition new disk
+      shell: echo -e "d\n"{{ diskNumber }}"\nn\n"{{ diskNumber }}"\n\n\nw" | fdisk /dev/sda
+      args:
+        executable: /bin/bash
+      become: yes
+
+    - name: resize disk step 2
+      shell: resize2fs /dev/sda{{ diskNumber }}
+      become: yes
+
+    - name: Verify new disk space
+      shell: /usr/bin/df -h
+      register: result
+    - debug:
+        msg: New disk space are  {{ result.stdout_lines }}
+      become: yes
+
+    - name: Unconditionally reboot the machine with all defaults
+      reboot:

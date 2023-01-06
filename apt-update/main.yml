@@ -1,0 +1,20 @@
+---
+- hosts: servers
+  become: yes
+  tasks:
+    - name: apt
+      apt:
+        update_cache: yes
+        upgrade: 'yes'
+
+    - name: Reboot the box if kernel updated
+      reboot:
+        msg: "Reboot initiated by Ansible for kernel updates"
+        connect_timeout: 500
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 300
+        test_command: uptime
+
+    - name: Unconditionally reboot the machine with all defaults
+      reboot:

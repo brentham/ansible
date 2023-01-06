@@ -1,0 +1,52 @@
+---
+- hosts: servers
+  vars:
+    - sshd_config: "/etc/ssh/sshd_config"
+  become: true
+  tasks:
+    - name: Set authorized key taken from file
+      authorized_key:
+        user: "{{ ansible_user }}"
+        state: present
+        key: "{{ lookup('file', '~/keys/sshkey.pub') }}"
+
+    - name: Copy AuthorizedKeysFile to etc
+    - copy:
+        src: .ssh/authorized_keys
+        dest: /etc/ssh/authorized_keys
+        mode: 0644
+        remote_src: yes
+
+    - name: AuthorizedKeysFile
+      lineinfile:
+        dest: "{{ sshd_config }}"
+        insertbefore: "#AuthorizedKeysFile     .ssh/authorized_keys .ssh/authorized_keys2"
+        line: "AuthorizedKeysFile .ssh/authorized_keys /etc/ssh/authorized_keys"
+
+    - name: Disable empty password login
+      lineinfile:
+        dest: "{{ sshd_config }}"
+        regexp: "^#?PermitEmptyPasswords"
+        line: "PermitEmptyPasswords no"
+
+    - name: Disable remote root login
+      lineinfile:
+        dest: "{{ sshd_config }}"
+        regexp: "^#?PermitRootLogin"
+        line: "PermitRootLogin no"
+
+    - name: Disable password login
+      lineinfile:
+        dest: "{{ sshd_config }}"
+        regexp: '^(#\s*)?PasswordAuthentication '
+        line: "PasswordAuthentication no"
+
+    - name: Enable PAM
+      lineinfile:
+        dest: "{{ sshd_config }}"
+        regexp: "^#?UsePAM"
+        line: "UsePAM yes"
+      notify: Restart ssh
+
+    - name: Unconditionally reboot the machine with all defaults
+      reboot:

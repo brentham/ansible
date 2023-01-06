@@ -1,0 +1,14 @@
+---
+- hosts: servers
+  become: yes
+  vars_prompt:
+  - name: username
+    prompt: "Enter Username"
+  - name: new_password
+    prompt: "Enter new password"
+  tasks:
+    - name: Change user password
+      user:
+        name: "{{ username }}"
+        update_password: always
+        password: "{{ new_password|password_hash('sha512') }}"
