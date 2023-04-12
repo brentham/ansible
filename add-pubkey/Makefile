@@ -1,8 +1,8 @@
-main:
+play:
 	ansible-playbook main.yml
 
-main-password:
+play-password:
 	ansible-playbook main.yml --ask-pass --ask-become-pass
 
-main-sudo:
+play-sudo:
 	ansible-playbook main.yml --ask-become-pass
