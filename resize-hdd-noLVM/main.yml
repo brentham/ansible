@@ -1,5 +1,4 @@
 ---
-
 - hosts: servers
   vars:
       - diskNumber: '2'
