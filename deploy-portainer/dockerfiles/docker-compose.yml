@@ -1,0 +1,19 @@
+version: '3.7'
+
+# volumes:
+#     portainer_data:
+
+services:
+    portainer:
+        container_name: portainer
+        image: portainer/portainer-ce:latest
+        privileged: true
+        ports:
+            - 8000:8000
+            - 9443:9443
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ./portainer_data:/data
+        restart: unless-stopped
+
+

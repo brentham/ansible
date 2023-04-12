@@ -1,0 +1,19 @@
+---
+- hosts: servers
+  tasks:
+    - name: Set a hostname
+      ansible.builtin.hostname:
+        name: "{{ new_hostname }}"
+      become: true
+
+    - name: Enable SystemdCgroup
+      lineinfile:
+        dest: /etc/hosts
+        search_string: "127.0.1.1"
+        line: "127.0.1.1 {{ new_hostname }}"
+        state: present
+      become: true
+
+    - name: Unconditionally reboot the machine with all defaults
+      reboot:
+      become: true

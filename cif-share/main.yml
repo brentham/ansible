@@ -1,0 +1,53 @@
+---
+- hosts: servers
+  become: yes
+  vars:
+    path_name:
+      - folder name
+    cif_rules: "cifs credentials=/var/lib/.secrets/.smbcredentials,uid=117,gid=117,rw,iocharset=utf8,noperm 0 0"
+    nfs_path:
+      - ip address or dns name:path mount path {{ cif_rules }}
+  tasks:
+    - name: install nfs-common
+      apt:
+        name:
+        - nfs-common
+        - cifs-utils
+        - open-iscsi
+        state: present
+        update_cache: true
+      become: true
+
+    - name: Create secret folder
+      file:
+        path: /var/lib/.secrets
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+      become: true
+
+    - name: Copy smbcredentials
+      copy:
+        src: ./smbcredentials/.smbcredentials
+        dest: /var/lib/.secrets
+        mode: 0600
+
+    - name: Creates directory
+      file:
+        path: /mnt/{{ item }}
+        state: directory
+      loop: "{{ path_name }}"
+
+    - name: Add share path
+      lineinfile:
+        dest: "/etc/fstab"
+        line: "{{ item }}"
+        state: present
+      loop: "{{ nfs_path }}"
+
+    - name: mount all
+      shell: echo -e "mount -va"
+
+    - name: Unconditionally reboot the machine with all defaults
+      reboot:

@@ -1,0 +1,18 @@
+---
+- hosts: servers
+  become: true
+  vars:
+    ip: xxx.xxx.xxx.xxx
+  tasks:
+  - name: Change IP
+    template:
+      src: templates/new_ip.j2
+      dest: /etc/netplan/00-installer-config.yaml
+      owner: root
+      group: root
+      mode: 0744
+    become: true
+
+  - name: Restart Service
+    command: netplan apply
+    become: true

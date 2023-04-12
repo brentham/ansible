@@ -1,0 +1,11 @@
+---
+
+- hosts: servers
+  become: true
+  tasks:
+    - name: Ensure listen port is 8080
+      replace:
+        path: /opt/myservice/config
+        regexp: 'listen(\s+)(\S*)80'
+        replace: 'listen\g<1>8080'
+        backup: true

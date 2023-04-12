@@ -1,0 +1,7 @@
+---
+- hosts: servers
+  tasks:
+  - name: Copy Public Key
+    authorized_key:
+      user: "{{ ansible_user }}"
+      key: "{{ lookup('file', '/home/' + lookup('env', 'USER') + '/.ssh/id_rsa.pub') }}"

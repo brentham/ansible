@@ -1,0 +1,48 @@
+- hosts: servers
+  become: yes
+  tasks:
+  - name: Upgrade all apt packages
+    apt: upgrade=dist force_apt_get=yes
+
+  - name: Install a list of packages
+    apt:
+      name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+      - docker.io
+      - docker-compose
+      state: present
+      update_cache: true
+    become: true
+
+  - name: docker sudo
+    become: yes
+    command: usermod -aG docker "{{ ansible_user }}"
+
+  - name: create portainer volume
+    become: yes
+    shell: docker volume create portainer_data
+
+  - name: reset ssh connection to allow user changes to affect 'current login user'
+    meta: reset_connection
+
+  - name: Copy docker-compose.yml from localhost to remote host
+    copy:
+      src: ./dockerfiles/docker-compose.yml
+      dest: /srv/docker/portainer/
+
+  - name: Pull portainer
+    become: yes
+    docker_compose:
+      project_src: /srv/docker/portainer/
+    register: output
+
+  # - name: Install Docker Swarm
+  #   become: yes
+  #   shell: docker swarm init
+
+  - name: Unconditionally reboot the machine with all defaults
+    reboot:

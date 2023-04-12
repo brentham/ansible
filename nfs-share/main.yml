@@ -1,0 +1,42 @@
+---
+- hosts: servers
+  become: true
+  vars:
+    path_name:
+      - folder name
+    nfs_rules: "nfs rw,soft,intr,noatime 0 0"
+    nfs_path:
+      - ip address or dns name:mount path /mnt/docker-data {{ nfs_rules }}
+  tasks:
+    - name: apt
+      apt:
+        update_cache: true
+        upgrade: 'yes'
+
+    - name: install packages
+      apt:
+        name:
+        - nfs-common
+        - cifs-utils
+        - open-iscsi
+        state: present
+        update_cache: true
+
+    - name: Creates directory
+      file:
+        path: /mnt/{{ item }}
+        state: directory
+      loop: "{{ path_name }}"
+
+    - name: Add share path
+      lineinfile:
+        dest: "/etc/fstab"
+        line: "{{ item }}"
+        state: present
+      loop: "{{ nfs_path }}"
+
+    - name: mount all
+      shell: echo -e "mount -va"
+
+    - name: Unconditionally reboot the machine with all defaults
+      reboot:
