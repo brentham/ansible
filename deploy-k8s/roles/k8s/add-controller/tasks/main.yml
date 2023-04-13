@@ -1,0 +1,32 @@
+---
+- name: Copy Bash script from localhost to remote host
+  copy:
+    src: ./scripts/controller-token
+    dest: /tmp/controller-token.sh
+    mode: 0777
+
+- name: Run K8S shell
+  shell: /tmp/controller-token.sh
+  become: true
+
+- name: Remove K8S shell
+  file:
+    path: /tmp/controller-token.sh
+    state: absent
+
+- name: Creates directory
+  file:
+    path: .kube
+    state: directory
+  become: false
+
+- name: add packages
+  shell: cp -i /etc/kubernetes/admin.conf .kube/config
+  become: true
+
+- name: Create a symbolic link
+  file:
+    path: .kube/config
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: true

@@ -1,0 +1,179 @@
+---
+- name: apt
+  apt:
+    update_cache: yes
+    upgrade: 'yes'
+
+- name: Install a list of packages
+  apt:
+    name:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    state: present
+    update_cache: true
+  become: true
+
+- name: modprobe overlay
+  shell: modprobe overlay
+  become: true
+
+- name: sysctl --system
+  shell: sysctl --system
+  become: true
+
+- name: get containerd
+  become: true
+  get_url:
+    url: https://github.com/containerd/containerd/releases/download/v1.6.16/containerd-1.6.16-linux-amd64.tar.gz
+    dest: /tmp/
+    mode: 0755
+    group: devops
+    owner: devops
+
+- name: extract containerd
+  shell: tar Cxzvf /usr/local /tmp/containerd-1.6.16-linux-amd64.tar.gz
+  become: true
+
+- name: get containerd.service
+  become: true
+  get_url:
+    url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+    dest: /etc/systemd/system/
+    mode: 0755
+    group: devops
+    owner: devops
+
+- name: daemon-reload
+  shell: systemctl daemon-reload
+  become: true
+
+- name: systemctl enable
+  shell: systemctl enable --now containerd
+  become: true
+
+- name: get runc
+  become: true
+  get_url:
+    url: https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64
+    dest: /tmp/
+    mode: 0755
+    group: devops
+    owner: devops
+
+- name: install runc
+  shell: install -m 755 /tmp/runc.amd64 /usr/local/sbin/runc
+  become: true
+
+- name: get cni-plugins
+  become: true
+  get_url:
+    url: https://github.com/containernetworking/plugins/releases/download/v1.2.0/cni-plugins-linux-amd64-v1.2.0.tgz
+    dest: /tmp/
+    mode: 0755
+    group: devops
+    owner: devops
+
+- name: create cni folder
+  file:
+    path: /opt/cni/bin
+    state: directory
+
+- name: install cni
+  shell: tar Cxzvf /opt/cni/bin /tmp/cni-plugins-linux-amd64-v1.2.0.tgz
+  become: true
+
+- name: Creates directory
+  file:
+    path: /etc/containerd
+    state: directory
+
+- name: add default config
+  shell: containerd config default | sudo tee /etc/containerd/config.toml
+  become: true
+
+- name: install kubectl
+  shell: curl -fsSLo /etc/apt/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+  become: true
+
+- name: install kubectl
+  shell: echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
+  become: true
+
+- name: apt
+  apt:
+    update_cache: yes
+    upgrade: 'yes'
+
+- name: Install kubectl list of packages
+  apt:
+    name:
+    - kubelet
+    - kubeadm
+    - kubectl
+    state: present
+    update_cache: true
+  become: true
+
+- name: Enable SystemdCgroup
+  replace:
+    path: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup(\s+)(\S*)=(\s+)(\S*)false'
+    replace: 'SystemdCgroup\g<1>=\g<1>true'
+  become: true
+
+- name: Enable ipv4
+  replace:
+    path: /etc/sysctl.conf
+    regexp: '#?net.ipv4.ip_forward=1'
+    replace: 'net.ipv4.ip_forward=1'
+  become: true
+
+# - name: add default config
+#   shell: swapoff -a
+#   become: true
+
+- name: Remove swapfile from /etc/fstab
+  mount:
+    name: "{{ item }}"
+    fstype: swap
+    state: absent
+  with_items:
+    - swap
+    - none
+
+- name: Disable swap
+  command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+  become: true
+
+- name: Creating an empty file
+  file:
+    path: "/etc/modules-load.d/k8s.conf"
+    state: touch
+
+- name: Add share path
+  lineinfile:
+    dest: "/etc/modules-load.d/k8s.conf"
+    line: "br_netfilter"
+    state: present
+
+- name: Unconditionally reboot the machine with all defaults
+  reboot:
+
+
+# - name: Upgrade all apt packages
+#   apt: upgrade=dist force_apt_get=yes
+
+# - name: Add an apt signing key for Kubernetes
+#   apt_key:
+#     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+#     state: present
+#   become: true
+
+# - name: Adding apt repository for Kubernetes
+#   apt_repository:
+#     repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+#     state: present
+#     filename: kubernetes.list
+#   become: true

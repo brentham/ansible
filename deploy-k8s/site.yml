@@ -1,0 +1,35 @@
+---
+- hosts: server-prep
+  become: yes
+  roles:
+    - role: k8s/server-prep
+
+- hosts: controller
+  become: yes
+  roles:
+    - role: k8s/controller
+
+- hosts: generate-node-token
+  become: yes
+  roles:
+    - role: k8s/generate-node-token
+
+- hosts: node
+  become: yes
+  roles:
+    - role: k8s/node
+
+- hosts: generate-cert
+  become: yes
+  roles:
+    - role: k8s/generate-cert
+
+- hosts: generate-controller-token
+  become: yes
+  roles:
+    - role: k8s/generate-controller-token
+
+- hosts: add-controller
+  become: yes
+  roles:
+    - role: k8s/add-controller

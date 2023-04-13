@@ -1,0 +1,24 @@
+---
+
+- name: Generate join command
+  command: kubeadm token create --print-join-command
+  register: node_token
+
+- debug:
+    msg: "{{node_token.stdout_lines}}"
+
+- name: Copy join command to local file
+  copy:
+    content: "{{ node_token.stdout }}"
+    dest: /tmp/node_token
+
+- name: Transfer file from remote to local
+  fetch:
+    src: /tmp/node_token
+    dest: ./scripts/node-token
+    flat: true
+
+- name: Remove join command
+  file:
+    path: /tmp/node_token
+    state: absent
