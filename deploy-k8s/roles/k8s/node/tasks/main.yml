@@ -1,0 +1,11 @@
+---
+
+- name: Copy Bash script from localhost to remote host
+  copy:
+    src: ./scripts/node-token
+    dest: /tmp/node-token.sh
+    mode: 0777
+
+- name: Run K3S shell
+  shell: /tmp/node-token.sh
+  become: true

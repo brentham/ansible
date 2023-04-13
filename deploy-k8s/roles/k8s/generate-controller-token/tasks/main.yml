@@ -1,0 +1,37 @@
+---
+
+- name: Copy Bash script from localhost to remote host
+  copy:
+    src: ./scripts/certificate-key
+    dest: /tmp/certificate-key
+    mode: 0777
+
+- name: extract base64code from file
+  slurp:
+    src: /tmp/certificate-key
+  register: certificate_key
+
+- name: Generate join command
+  command: kubeadm token create --certificate-key {{certificate_key['content'] | b64decode}} --print-join-command
+  register: controller_token
+
+- name: Copy join command to local file
+  copy:
+    content: "{{ controller_token.stdout }}"
+    dest: /tmp/controller_token
+
+- name: Transfer file from remote to local
+  fetch:
+    src: /tmp/controller_token
+    dest: ./scripts/controller-token
+    flat: true
+
+- name: Remove controller_token
+  file:
+    path: /tmp/controller_token
+    state: absent
+
+- name: Remove certificate-key
+  file:
+    path: /tmp/certificate-key
+    state: absent

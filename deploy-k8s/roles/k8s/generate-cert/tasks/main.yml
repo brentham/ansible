@@ -1,0 +1,21 @@
+---
+- name: Generate join command
+  command: kubeadm init phase upload-certs --upload-certs
+  register: certificate_key
+  become: true
+
+- name: Copy join command to local file
+  copy:
+    content: "{{ certificate_key.stdout_lines[2]}}"
+    dest: /tmp/certificate_key
+
+- name: Transfer file from remote to local
+  fetch:
+    src: /tmp/certificate_key
+    dest: ./scripts/certificate-key
+    flat: true
+
+- name: Remove join command
+  file:
+    path: /tmp/certificate_key
+    state: absent

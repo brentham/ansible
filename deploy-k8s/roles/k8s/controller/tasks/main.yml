@@ -1,0 +1,48 @@
+---
+- name: add packages
+  command: kubeadm init --control-plane-endpoint="{{ ansible_default_ipv4.address }}" --node-name "{{ ansible_hostname }}" --pod-network-cidr=10.244.0.0/16
+  become: true
+
+- name: Creates directory
+  file:
+    path: .kube
+    state: directory
+  become: false
+
+- name: add packages
+  shell: cp -i /etc/kubernetes/admin.conf .kube/config
+  become: true
+
+- name: Create a symbolic link
+  file:
+    path: .kube/config
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: true
+
+- name: Generate join command
+  command: kubeadm token create --print-join-command
+  register: node_token
+
+- debug:
+    msg: "{{node_token.stdout_lines}}"
+
+- name: Copy join command to local file
+  copy:
+    content: "{{ node_token.stdout }}"
+    dest: /tmp/node_token
+
+- name: Transfer file from remote to local
+  fetch:
+    src: /tmp/node_token
+    dest: ./scripts/node-token
+    flat: true
+
+- name: Remove join command
+  file:
+    path: /tmp/node_token
+    state: absent
+
+- name: Install calico pod network
+  become: false
+  command: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
